@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+echo "=== .agents/setup: $(date) ==="
+
+# uv — install if missing (orb base image may not have it)
+export PATH="$HOME/.local/bin:$PATH"
+if ! command -v uv >/dev/null 2>&1; then
+  echo "Installing uv..."
+  curl -LsSf https://astral.sh/uv/install.sh | sh
+fi
+
+# just — install if missing
+if ! command -v just >/dev/null 2>&1; then
+  echo "Installing just..."
+  curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to "$HOME/.local/bin"
+fi
+
+# Sync Python dependencies from uv.lock (idempotent — no-op if already synced)
+echo "Syncing Python dependencies..."
+uv sync
+
+# Copy env template without clobbering
+if [ -f ".env.example" ]; then
+  [ -f ".env.local" ] || cp -- .env.example .env.local
+fi
+
+echo "=== .agents/setup complete: $(date) ==="
